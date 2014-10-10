@@ -65,8 +65,8 @@ done
 if [ -z "$pool" ]; then printf "$help"; exit "$STATE_UNKNOWN"; fi
 #########################################################################
 # Verify threshold sense
-if [ -n "$warn" ] && [ "$crit" = "-1" ]; then echo "Both warning and critical thresholds must be set"; exit "$STATE_UNKNOWN"; fi
-if [ "$warn" = "-1" ] && [ -n "$crit" ]; then echo "Both warning and critical thresholds must be set"; exit "$STATE_UNKNOWN"; fi
+if [ "$warn" != "-1" ] && [ -n "$warn" ] && [ "$crit" = "-1" ]; then echo "Both warning and critical thresholds must be set"; exit "$STATE_UNKNOWN"; fi
+if [ "$crit" != "-1" ] && [ "$warn" = "-1" ] && [ -n "$crit" ]; then echo "Both warning and critical thresholds must be set"; exit "$STATE_UNKNOWN"; fi
 # Check if values are not empty and numeric
 if test -n "$warn" && ! test "$warn" -eq "$warn" 2>/dev/null; then echo "Warning value \`$warn' does not seem to be a number"; exit "$STATE_UNKNOWN"; fi
 if test -n "$crit" && ! test "$crit" -eq "$crit" 2>/dev/null; then echo "Critical value \`$crit' does not seem to be a number"; exit "$STATE_UNKNOWN"; fi
