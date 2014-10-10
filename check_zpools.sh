@@ -48,6 +48,8 @@ if [ "${1}" = "--help" -o "${#}" = "0" ]; then
 fi
 #########################################################################
 # Get user-given variables
+warn=-1
+crit=-1
 while getopts "p:w:c:" Input; do
     case $Input in
     p)  pool="$OPTARG";;
@@ -63,8 +65,12 @@ done
 if [ -z "$pool" ]; then printf "$help"; exit "$STATE_UNKNOWN"; fi
 #########################################################################
 # Verify threshold sense
-if [ -n "$warn" ] && [ -z "$crit" ]; then echo "Both warning and critical thresholds must be set"; exit "$STATE_UNKNOWN"; fi
-if [ -z "$warn" ] && [ -n "$crit" ]; then echo "Both warning and critical thresholds must be set"; exit "$STATE_UNKNOWN"; fi
+if [ -n "$warn" ] && [ "$crit" = "-1" ]; then echo "Both warning and critical thresholds must be set"; exit "$STATE_UNKNOWN"; fi
+if [ "$warn" = "-1" ] && [ -n "$crit" ]; then echo "Both warning and critical thresholds must be set"; exit "$STATE_UNKNOWN"; fi
+# Check if values are not empty and numeric
+if test -n "$warn" && ! test "$warn" -eq "$warn" 2>/dev/null; then echo "Warning value \`$warn' does not seem to be a number"; exit "$STATE_UNKNOWN"; fi
+if test -n "$crit" && ! test "$crit" -eq "$crit" 2>/dev/null; then echo "Critical value \`$crit' does not seem to be a number"; exit "$STATE_UNKNOWN"; fi
+# Warning <= Critical?
 if [ "$warn" -gt "$crit" ]; then echo "Warning threshold cannot be greater than critical"; exit "$STATE_UNKNOWN"; fi
 #########################################################################
 # What needs to be checked?
@@ -82,8 +88,9 @@ if [ $pool = "ALL" ]; then
         perfdataNum="perfdata$p"
         fcrit="-1"
 
-        # Check with thresholds
-        if [ -n "$warn" ] && [ -n "$crit" ]; then
+        
+        if [ "$warn" != "-1" ] && [ "$crit" != "-1" ]; then
+            # Check with thresholds
             if [ "$HEALTH" != "ONLINE" ]; then
                 eval ` echo $errorNum=\"$POOL health is $HEALTH\" `
                 fcrit=1
@@ -96,8 +103,8 @@ if [ $pool = "ALL" ]; then
                 eval ` echo $errorNum=\"POOL $POOL usage is WARNING \($CAPACITY%\)\" `
                 errorCount=` expr $errorCount + 1 `
             fi
-        # Check without thresholds
         else
+            # Check without thresholds
             if [ "$HEALTH" != "ONLINE" ]; then
             eval ` echo $errorNum=\"$POOL health is $HEALTH\" `
             fcrit=1
@@ -146,7 +153,7 @@ else
     CAPACITY=` zpool list -Ho capacity $pool | tr -d '%' `
     HEALTH=` zpool list -Ho health $pool `
 
-    if [ -n "$warn" ] && [ -n "$crit" ]; then
+    if [ "$warn" != "-1" ] && [ "$crit" != "-1" ]; then
         # Check with thresholds
         if [ "$HEALTH" != "ONLINE" ]; then echo "ZFS POOL $pool health is $HEALTH|$pool=$CAPACITY%"; exit "$STATE_CRITICAL"
         elif [ "$CAPACITY" -gt "$crit" ]; then echo "ZFS POOL $pool usage is CRITICAL ($CAPACITY%|$pool=$CAPACITY%)"; exit "$STATE_CRITICAL"
