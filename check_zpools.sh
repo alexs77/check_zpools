@@ -156,7 +156,7 @@ else
     if [ "$warn" != "-1" ] && [ "$crit" != "-1" ]; then
         # Check with thresholds
         if [ "$HEALTH" != "ONLINE" ]; then echo "ZFS POOL $pool health is $HEALTH|$pool=$CAPACITY%"; exit "$STATE_CRITICAL"
-        elif [ "$CAPACITY" -gt "$crit" ]; then echo "ZFS POOL $pool usage is CRITICAL ($CAPACITY%|$pool=$CAPACITY%)"; exit "$STATE_CRITICAL"
+        elif [ "$CAPACITY" -ge "$crit" ]; then echo "ZFS POOL $pool usage is CRITICAL ($CAPACITY%)|$pool=$CAPACITY%"; exit "$STATE_CRITICAL"
         elif [ "$CAPACITY" -gt "$warn" ] && [ "$CAPACITY" -lt "$crit" ]; then echo "ZFS POOL $pool usage is WARNING ($CAPACITY%)|$pool=$CAPACITY%"; exit "$STATE_WARNING"
         else echo "ALL ZFS POOLS OK ($pool)|$pool=$CAPACITY%"; exit "$STATE_OK"
         fi
